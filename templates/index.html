@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Training Service</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Face Training Service</h1>
+        
+        <!-- Global Notification Area -->
+        <div id="globalNotification" class="notification hidden"></div>
+        
+        <div class="section">
+            <h2>Upload Training Data</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="personName">Person Name:</label>
+                    <input type="text" id="personName" name="person_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="images">Select Images:</label>
+                    <input type="file" id="images" name="images" multiple accept="image/*" required>
+                </div>
+                <button type="submit">Upload Images</button>
+            </form>
+            <div id="uploadStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>Training Control</h2>
+            <button id="startTraining">Start Training</button>
+            <button id="checkStatus">Check Status</button>
+            <div id="trainingStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>Model Management</h2>
+            <button id="downloadModel">Download CoreML Model</button>
+            <button id="getModelInfo">Get Model Info</button>
+            <div id="modelInfo"></div>
+        </div>
+
+        <div class="section">
+            <h2>Data Management</h2>
+            <button id="listPeople">List People</button>
+            <div class="form-group">
+                <label for="deletePerson">Delete Person:</label>
+                <input type="text" id="deletePerson" placeholder="Enter person name">
+                <button id="deletePersonBtn">Delete</button>
+            </div>
+            <button id="clearAllData" class="danger">Clear All Data</button>
+            <div id="peopleList"></div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

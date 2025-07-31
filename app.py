@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, render_template
 import os
 import json
 import zipfile
@@ -35,6 +35,11 @@ training_status = {
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+@app.route('/', methods=['GET'])
+def index():
+    """Serve the web UI"""
+    return render_template('index.html')
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
@@ -43,14 +48,16 @@ def health_check():
 @app.route('/upload_training_data', methods=['POST'])
 def upload_training_data():
     """Upload training images for a person"""
-    if 'files' not in request.files:
+    # Check for both 'files' and 'images' field names
+    files_field = 'images' if 'images' in request.files else 'files'
+    if files_field not in request.files:
         return jsonify({'error': 'No files provided'}), 400
     
     person_name = request.form.get('person_name')
     if not person_name:
         return jsonify({'error': 'Person name is required'}), 400
     
-    files = request.files.getlist('files')
+    files = request.files.getlist(files_field)
     if not files or files[0].filename == '':
         return jsonify({'error': 'No files selected'}), 400
     
@@ -59,17 +66,38 @@ def upload_training_data():
     os.makedirs(person_dir, exist_ok=True)
     
     uploaded_files = []
-    for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(person_dir, filename)
-            file.save(file_path)
-            uploaded_files.append(filename)
+    skipped_files = []
     
-    return jsonify({
+    for file in files:
+        if file and file.filename:
+            if allowed_file(file.filename):
+                try:
+                    filename = secure_filename(file.filename)
+                    if not filename:  # Check if filename is empty after securing
+                        skipped_files.append(f"{file.filename} (invalid filename)")
+                        continue
+                        
+                    file_path = os.path.join(person_dir, filename)
+                    file.save(file_path)
+                    uploaded_files.append(filename)
+                except Exception as e:
+                    skipped_files.append(f"{file.filename} (save error: {str(e)})")
+            else:
+                skipped_files.append(f"{file.filename} (invalid file type)")
+    
+    if not uploaded_files:
+        return jsonify({'error': 'No valid files were uploaded. Please check file types and try again.'}), 400
+    
+    response = {
         'message': f'Uploaded {len(uploaded_files)} files for {person_name}',
         'files': uploaded_files
-    })
+    }
+    
+    if skipped_files:
+        response['skipped'] = skipped_files
+        response['message'] += f'. {len(skipped_files)} files were skipped.'
+    
+    return jsonify(response)
 
 @app.route('/list_people', methods=['GET'])
 def list_people():
