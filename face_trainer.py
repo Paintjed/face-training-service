@@ -135,32 +135,50 @@ class FaceTrainer:
         
         logger.info("Converting model to CoreML...")
         
-        # Load the saved model
-        model = keras.models.load_model(h5_model_path)
+        try:
+            # Load the saved model
+            model = keras.models.load_model(h5_model_path)
+            logger.info(f"Model input shape: {model.input_shape}")
+            logger.info(f"Model output shape: {model.output_shape}")
+            
+            # Try simpler conversion first
+            coreml_model = ct.convert(
+                model,
+                source="tensorflow",
+                convert_to="neuralnetwork"  # Use older format which is more stable
+            )
+            
+            # Set model metadata
+            coreml_model.author = "Face Training Service"
+            coreml_model.short_description = "Face Recognition Classifier"
+            coreml_model.version = "1.0"
+            
+            # Save CoreML model
+            coreml_model.save(coreml_model_path)
+            
+            logger.info(f"CoreML model saved to {coreml_model_path}")
+            
+        except Exception as e:
+            logger.error(f"CoreML conversion failed: {str(e)}")
+            logger.info("Attempting fallback: saving model without CoreML conversion")
+            
+            # Create a simple model info file instead
+            model_info = {
+                "status": "h5_only",
+                "message": "CoreML conversion failed, H5 model available",
+                "input_shape": str(model.input_shape),
+                "output_shape": str(model.output_shape),
+                "classes": len(self.label_encoder.classes_)
+            }
+            
+            fallback_info_path = os.path.join(self.model_dir, "model_info.json")
+            import json
+            with open(fallback_info_path, 'w') as f:
+                json.dump(model_info, f, indent=2)
+            
+            logger.info(f"Model info saved to {fallback_info_path}")
         
-        # Convert to CoreML
-        coreml_model = ct.convert(
-            model,
-            inputs=[ct.TensorType(shape=(1, 128), name="face_encoding")],
-            outputs=[ct.TensorType(name="predictions")],
-            convert_to="mlprogram"
-        )
-        
-        # Set model metadata
-        coreml_model.author = "Face Training Service"
-        coreml_model.short_description = "Face Recognition Classifier"
-        coreml_model.version = "1.0"
-        
-        # Set input/output descriptions
-        coreml_model.input_description["face_encoding"] = "128-dimensional face encoding vector"
-        coreml_model.output_description["predictions"] = "Probability distribution over face classes"
-        
-        # Save CoreML model
-        coreml_model.save(coreml_model_path)
-        
-        logger.info(f"CoreML model saved to {coreml_model_path}")
-        
-        # Also save label mapping for iOS app
+        # Always save label mapping for iOS app
         label_mapping_path = os.path.join(self.model_dir, "label_mapping.json")
         import json
         label_mapping = {str(i): label for i, label in enumerate(self.label_encoder.classes_)}

@@ -7,6 +7,8 @@ from face_trainer import FaceTrainer
 import logging
 import threading
 import uuid
+import cv2
+import time
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -282,6 +284,89 @@ def clear_all_data():
     }
     
     return jsonify({'message': 'All data cleared successfully'})
+
+@app.route('/process_video_training', methods=['POST'])
+def process_video_training():
+    """Process uploaded video and extract frames for training data"""
+    person_name = request.form.get('person_name')
+    if not person_name:
+        return jsonify({'error': 'Person name is required'}), 400
+    
+    if 'video' not in request.files:
+        return jsonify({'error': 'No video file provided'}), 400
+    
+    video_file = request.files['video']
+    if video_file.filename == '':
+        return jsonify({'error': 'No video file selected'}), 400
+    
+    try:
+        # Create person directory
+        person_dir = os.path.join(TRAINING_DATA_FOLDER, secure_filename(person_name))
+        os.makedirs(person_dir, exist_ok=True)
+        
+        # Save uploaded video temporarily
+        timestamp = int(time.time())
+        temp_video_path = os.path.join(UPLOAD_FOLDER, f"temp_video_{timestamp}.webm")
+        video_file.save(temp_video_path)
+        
+        logger.info(f"Processing uploaded video for {person_name}")
+        
+        # Open video file with OpenCV
+        cap = cv2.VideoCapture(temp_video_path)
+        if not cap.isOpened():
+            os.remove(temp_video_path)
+            return jsonify({'error': 'Could not open video file'}), 500
+        
+        frames = []
+        frame_count = 0
+        
+        # Read all frames from video
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+            frames.append(frame.copy())
+            frame_count += 1
+        
+        cap.release()
+        os.remove(temp_video_path)  # Clean up temp file
+        
+        if not frames:
+            return jsonify({'error': 'No frames extracted from video'}), 500
+        
+        # Extract frames every 0.5 seconds (approximately 10 frames total)
+        frame_interval = max(1, len(frames) // 10)
+        extracted_frames = frames[::frame_interval]
+        
+        # Save extracted frames as training images
+        saved_images = []
+        
+        for i, frame in enumerate(extracted_frames):
+            filename = f"video_frame_{timestamp}_{i:02d}.jpg"
+            file_path = os.path.join(person_dir, filename)
+            
+            # Save frame as JPEG
+            success = cv2.imwrite(file_path, frame)
+            if success:
+                saved_images.append(filename)
+            else:
+                logger.warning(f"Failed to save frame {i}")
+        
+        logger.info(f"Saved {len(saved_images)} training images for {person_name}")
+        
+        return jsonify({
+            'message': f'Successfully processed video and extracted {len(saved_images)} training images for {person_name}',
+            'frames_captured': frame_count,
+            'images_saved': len(saved_images),
+            'saved_files': saved_images
+        })
+        
+    except Exception as e:
+        logger.error(f"Error during video processing: {str(e)}")
+        # Clean up temp file if it exists
+        if 'temp_video_path' in locals() and os.path.exists(temp_video_path):
+            os.remove(temp_video_path)
+        return jsonify({'error': f'Video processing failed: {str(e)}'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)

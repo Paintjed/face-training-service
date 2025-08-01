@@ -5,6 +5,8 @@ This file contains configuration and context information for Claude Code to help
 ## Project Overview
 
 This is a Docker-based face recognition training service that:
+- **Web UI** for easy model training and management
+- **Video Recording** from webcam for training data collection
 - Trains face recognition models using TensorFlow/Keras
 - Converts trained models to CoreML format for iOS applications
 - Provides a REST API for model management and training
@@ -19,9 +21,13 @@ FaceTrainingService/
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile            # Docker container configuration
 ├── docker-compose.yml    # Docker Compose setup
+├── templates/            # Web UI HTML templates
+│   └── index.html        # Main web interface
+├── static/              # Web UI assets (CSS, JS)
 ├── training_data/        # Training images organized by person
 ├── models/              # Generated models (H5, CoreML, label mappings)
-└── uploads/             # Temporary file uploads
+├── uploads/             # Temporary file uploads
+└── CoreML_Fix_Guide.md  # Troubleshooting guide
 ```
 
 ## Development Commands
@@ -34,6 +40,7 @@ FaceTrainingService/
 
 ### Testing and Development
 - **Run locally (without Docker)**: `python app.py`
+- **Run locally for webcam access**: `python app.py` (recommended for video recording feature)
 - **Test training script**: `python face_trainer.py`
 - **Install dependencies**: `pip install -r requirements.txt`
 
@@ -43,9 +50,13 @@ FaceTrainingService/
 
 ## API Endpoints
 
+### Web UI
+- `GET /` - Main web interface with video recording and upload features
+
 ### Core Endpoints
 - `GET /health` - Health check
 - `POST /upload_training_data` - Upload training images
+- `POST /process_video_training` - Process uploaded video and extract frames
 - `POST /start_training` - Start model training
 - `GET /training_status` - Check training progress
 - `GET /download_coreml_model` - Download CoreML model

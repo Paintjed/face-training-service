@@ -178,6 +178,130 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     }
 });
 
+// Video recording variables
+let mediaStream = null;
+let mediaRecorder = null;
+let recordedChunks = [];
+
+// Start camera
+document.getElementById('startVideoBtn').addEventListener('click', async () => {
+    try {
+        mediaStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { width: 640, height: 480 }, 
+            audio: false 
+        });
+        
+        const videoPreview = document.getElementById('videoPreview');
+        videoPreview.srcObject = mediaStream;
+        videoPreview.style.display = 'block';
+        
+        document.getElementById('startVideoBtn').style.display = 'none';
+        document.getElementById('recordVideoBtn').style.display = 'inline-block';
+        document.getElementById('stopVideoBtn').style.display = 'inline-block';
+        
+        showNotification('Camera started successfully!', 'success');
+        document.getElementById('videoStatus').innerHTML = '<div class="info">Camera ready. You can now record video.</div>';
+    } catch (error) {
+        showNotification('Failed to access camera. Please grant camera permission.', 'error');
+        document.getElementById('videoStatus').innerHTML = '<div class="error">Camera access denied or not available</div>';
+    }
+});
+
+// Record video
+document.getElementById('recordVideoBtn').addEventListener('click', async () => {
+    const personName = document.getElementById('videoPersonName').value.trim();
+    if (!personName) {
+        showNotification('Please enter person name first', 'error');
+        return;
+    }
+    
+    if (!mediaStream) {
+        showNotification('Please start camera first', 'error');
+        return;
+    }
+    
+    try {
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
+        
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+        
+        mediaRecorder.onstop = async () => {
+            const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+            await uploadVideoForTraining(videoBlob, personName);
+        };
+        
+        mediaRecorder.start();
+        
+        document.getElementById('recordVideoBtn').disabled = true;
+        document.getElementById('videoStatus').innerHTML = '<div class="info">Recording... (5 seconds)</div>';
+        
+        // Stop recording after 5 seconds
+        setTimeout(() => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                document.getElementById('recordVideoBtn').disabled = false;
+            }
+        }, 5000);
+        
+    } catch (error) {
+        showNotification('Failed to start recording', 'error');
+        document.getElementById('videoStatus').innerHTML = '<div class="error">Recording failed</div>';
+    }
+});
+
+// Stop camera
+document.getElementById('stopVideoBtn').addEventListener('click', () => {
+    if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+    }
+    
+    const videoPreview = document.getElementById('videoPreview');
+    videoPreview.style.display = 'none';
+    
+    document.getElementById('startVideoBtn').style.display = 'inline-block';
+    document.getElementById('recordVideoBtn').style.display = 'none';
+    document.getElementById('stopVideoBtn').style.display = 'none';
+    
+    document.getElementById('videoStatus').innerHTML = '';
+});
+
+// Upload recorded video for training
+async function uploadVideoForTraining(videoBlob, personName) {
+    const formData = new FormData();
+    formData.append('person_name', personName);
+    formData.append('video', videoBlob, 'recording.webm');
+    
+    const statusDiv = document.getElementById('videoStatus');
+    statusDiv.innerHTML = '<div class="info">Processing video and extracting frames...</div>';
+    
+    try {
+        const response = await fetch(`${API_BASE}/process_video_training`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        const result = await response.json();
+        if (response.ok) {
+            showNotification(`Successfully processed video for ${personName}! Extracted ${result.images_saved} training images.`, 'success');
+            statusDiv.innerHTML = `<div class="success">${result.message}</div>`;
+            document.getElementById('videoPersonName').value = '';
+        } else {
+            const errorMsg = result.error || 'Video processing failed';
+            showNotification(`Video processing failed: ${errorMsg}`, 'error');
+            statusDiv.innerHTML = `<div class="error">Error: ${errorMsg}</div>`;
+        }
+    } catch (error) {
+        handleApiError(error);
+        statusDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+    }
+}
+
 // Start training
 document.getElementById('startTraining').addEventListener('click', async () => {
     const button = document.getElementById('startTraining');

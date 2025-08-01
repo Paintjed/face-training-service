@@ -4,6 +4,9 @@ A Docker-based service for training face recognition models and converting them 
 
 ## Features
 
+- **Web UI** for easy model training and management
+- **Video Recording** - Record 5-second videos from webcam for training data
+- **Image Upload** - Traditional image upload for training
 - Face data training using face_recognition library
 - Neural network classifier with TensorFlow/Keras
 - Automatic conversion to CoreML format for iOS
@@ -17,6 +20,7 @@ A Docker-based service for training face recognition models and converting them 
 
 ### Training Data Management
 - `POST /upload_training_data` - Upload training images for a person
+- `POST /process_video_training` - Process uploaded video and extract training frames
 - `GET /list_people` - List all people in training data
 - `DELETE /delete_person` - Delete a person's training data
 - `DELETE /clear_all_data` - Clear all training data and models
@@ -31,13 +35,34 @@ A Docker-based service for training face recognition models and converting them 
 
 ## Usage
 
-### 1. Start the Service
+### Option 1: Web UI (Recommended)
+
+1. **Start the service locally for webcam access:**
+```bash
+# Install dependencies
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Run locally
+python app.py
+```
+
+2. **Open your browser to** `http://localhost:5000`
+
+3. **Use the Web UI:**
+   - **Image Upload**: Upload multiple images for training
+   - **Video Recording**: Record 5-second videos from webcam (extracts ~10 training frames)
+   - **Training Control**: Start training and monitor progress
+   - **Model Management**: Download CoreML models
+
+### Option 2: Docker (API Only)
 
 ```bash
 docker-compose up -d
 ```
 
-### 2. Upload Training Data
+### Option 3: API Usage
 
 Upload images for each person you want to recognize:
 
@@ -49,19 +74,19 @@ curl -X POST http://localhost:5000/upload_training_data \
   -F "files=@john3.jpg"
 ```
 
-### 3. Start Training
+**Start Training:**
 
 ```bash
 curl -X POST http://localhost:5000/start_training
 ```
 
-### 4. Check Training Status
+**Check Training Status:**
 
 ```bash
 curl http://localhost:5000/training_status
 ```
 
-### 5. Download CoreML Model
+**Download CoreML Model:**
 
 ```bash
 curl -O http://localhost:5000/download_coreml_model
@@ -127,14 +152,20 @@ class FaceRecognizer {
 
 ```
 FaceTrainingService/
-├── app.py                 # Flask REST API
+├── app.py                 # Flask REST API server
 ├── face_trainer.py        # Training logic and CoreML conversion
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile            # Docker configuration
 ├── docker-compose.yml    # Docker Compose configuration
+├── templates/            # Web UI HTML templates
+│   └── index.html        # Main web interface
+├── static/              # Web UI assets
+│   ├── script.js        # Frontend JavaScript
+│   └── style.css        # Styling
 ├── training_data/        # Training images (organized by person)
 ├── models/              # Generated models
-└── uploads/             # Temporary upload directory
+├── uploads/             # Temporary upload directory
+└── CoreML_Fix_Guide.md  # Troubleshooting guide
 ```
 
 ## Training Data Structure
@@ -162,7 +193,10 @@ training_data/
 
 ## Notes
 
+- **Webcam Access**: For video recording, run locally (`python app.py`) instead of Docker
+- **Browser Permissions**: Video recording requires camera permission in browser
 - Minimum 3-5 images per person for good accuracy
 - Images should contain clear, well-lit faces
 - Training time depends on the amount of data and hardware
 - CoreML model is optimized for iOS deployment
+- See `CoreML_Fix_Guide.md` for troubleshooting CoreML conversion issues
