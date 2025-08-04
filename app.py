@@ -130,24 +130,29 @@ def start_training():
     if not os.path.exists(TRAINING_DATA_FOLDER) or not os.listdir(TRAINING_DATA_FOLDER):
         return jsonify({'error': 'No training data found. Upload training images first.'}), 400
     
+    # Get model type from request (default to "image" for iOS compatibility)
+    model_type = request.json.get('model_type', 'image') if request.is_json else 'image'
+    
     job_id = str(uuid.uuid4())
     training_status = {
         'is_training': True,
         'progress': 0,
-        'message': 'Starting training...',
-        'job_id': job_id
+        'message': f'Starting training (model type: {model_type})...',
+        'job_id': job_id,
+        'model_type': model_type
     }
     
     # Start training in background thread
-    thread = threading.Thread(target=train_model_background, args=(job_id,))
+    thread = threading.Thread(target=train_model_background, args=(job_id, model_type))
     thread.start()
     
     return jsonify({
-        'message': 'Training started',
-        'job_id': job_id
+        'message': f'Training started (model type: {model_type})',
+        'job_id': job_id,
+        'model_type': model_type
     })
 
-def train_model_background(job_id):
+def train_model_background(job_id, model_type="image"):
     """Background training function"""
     global training_status
     
@@ -166,10 +171,10 @@ def train_model_background(job_id):
             return
         
         # Update progress
-        training_status['message'] = 'Training model...'
+        training_status['message'] = f'Training model (type: {model_type})...'
         training_status['progress'] = 30
         
-        accuracy = trainer.train_model()
+        accuracy = trainer.train_model(model_type=model_type)
         
         # Update progress
         training_status['message'] = 'Saving model...'
@@ -186,9 +191,9 @@ def train_model_background(job_id):
         # Complete
         training_status['is_training'] = False
         training_status['progress'] = 100
-        training_status['message'] = f'Training completed successfully! Accuracy: {accuracy:.2%}'
+        training_status['message'] = f'Training completed successfully! Accuracy: {accuracy:.2%} (Model type: {model_type})'
         
-        logger.info(f"Training job {job_id} completed successfully")
+        logger.info(f"Training job {job_id} completed successfully with model type {model_type}")
         
     except Exception as e:
         training_status['is_training'] = False

@@ -306,18 +306,25 @@ async function uploadVideoForTraining(videoBlob, personName) {
 document.getElementById('startTraining').addEventListener('click', async () => {
     const button = document.getElementById('startTraining');
     const statusDiv = document.getElementById('trainingStatus');
+    const modelType = document.getElementById('modelType').value;
     
     setLoading(button, true);
-    statusDiv.innerHTML = '<div class="info">Starting training...</div>';
+    statusDiv.innerHTML = `<div class="info">Starting training (${modelType} model)...</div>`;
     
     try {
         const response = await fetch(`${API_BASE}/start_training`, {
-            method: 'POST'
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model_type: modelType
+            })
         });
         
         const result = await response.json();
         if (response.ok) {
-            showNotification('Training started successfully!', 'success');
+            showNotification(`Training started successfully! (${modelType} model)`, 'success');
             statusDiv.innerHTML = `<div class="success">${result.message}</div>`;
         } else {
             const errorMsg = result.error || 'Failed to start training';

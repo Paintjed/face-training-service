@@ -48,6 +48,14 @@
 
         <div class="section">
             <h2>Training Control</h2>
+            <div class="form-group">
+                <label for="modelType">Model Type:</label>
+                <select id="modelType" name="model_type">
+                    <option value="image">Image Input (iOS Compatible)</option>
+                    <option value="encoding">Face Encoding Input (Legacy)</option>
+                </select>
+                <small>Image Input model accepts direct image input and is compatible with iOS apps</small>
+            </div>
             <button id="startTraining">Start Training</button>
             <button id="checkStatus">Check Status</button>
             <div id="trainingStatus"></div>
