@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record Training Data - Face Training Service</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        /* Face Detection Guidance Overlay */
+        .face-guide-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Center Cross Guidelines */
+        .center-cross {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .vertical-line {
+            width: 2px;
+            height: 100px;
+            background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.6), transparent);
+            position: absolute;
+            left: -1px;
+            top: -50px;
+        }
+
+        .horizontal-line {
+            width: 100px;
+            height: 2px;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.6), transparent);
+            position: absolute;
+            top: -1px;
+            left: -50px;
+        }
+
+        /* Face Oval Guide */
+        .face-oval {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 160px;
+            height: 200px;
+            border: 3px solid rgba(34, 197, 94, 0.8);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 
+                inset 0 0 20px rgba(34, 197, 94, 0.3),
+                0 0 20px rgba(34, 197, 94, 0.4);
+            transition: all 0.3s ease;
+        }
+
+
+        /* Eye Markers */
+        .eye-marker {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            background: rgba(34, 197, 94, 0.6);
+        }
+
+        .left-eye {
+            top: 60px;
+            left: 45px;
+        }
+
+        .right-eye {
+            top: 60px;
+            right: 45px;
+        }
+
+        /* Nose Marker */
+        .nose-marker {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Mouth Line */
+        .mouth-line {
+            position: absolute;
+            width: 40px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 1px;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+
+        /* Recording Progress */
+        .recording-progress {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .progress-bar {
+            width: 200px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #16a34a);
+            border-radius: 4px;
+            transition: width 0.1s ease;
+        }
+
+        .progress-text {
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        /* Animations */
+        .face-oval {
+            animation: breathe 3s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.02); }
+        }
+
+        .eye-marker {
+            animation: blink 4s ease-in-out infinite;
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% { opacity: 1; }
+            95% { opacity: 0.3; }
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            #videoContainer {
+                width: 100% !important;
+                max-width: 400px;
+            }
+            
+            #videoPreview {
+                width: 100%;
+                height: auto;
+            }
+            
+            .status-panel {
+                font-size: 11px;
+                min-width: 150px;
+            }
+            
+            .face-oval {
+                width: 120px;
+                height: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Record Training Data</h1>
+        
+        <!-- Global Notification Area -->
+        <div id="globalNotification" class="notification hidden"></div>
+        
+        <div class="section">
+            <h2>Video Recording</h2>
+            <p>Record a 5-second video to generate training images for face recognition.</p>
+            
+            <form id="videoForm">
+                <div class="form-group">
+                    <label for="videoPersonName">Select Person:</label>
+                    <select id="videoPersonName" name="person_name" required>
+                        <option value="">Choose a person...</option>
+                        <option value="Allen">Allen</option>
+                        <option value="Andrew">Andrew</option>
+                        <option value="Angela">Angela</option>
+                        <option value="Carrod">Carrod</option>
+                        <option value="Claire">Claire</option>
+                        <option value="Ingrid">Ingrid</option>
+                        <option value="Ivar">Ivar</option>
+                        <option value="Joan">Joan</option>
+                        <option value="Joseph">Joseph</option>
+                        <option value="Judy">Judy</option>
+                        <option value="Kai">Kai</option>
+                        <option value="Matt">Matt</option>
+                        <option value="Ryan">Ryan</option>
+                        <option value="Spencer">Spencer</option>
+                        <option value="Steve">Steve</option>
+                        <option value="Sue">Sue</option>
+                        <option value="Ya-Ting">Ya-Ting</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <div id="videoContainer" style="position: relative; display: none; width: 480px; height: 360px; margin: 0 auto;">
+                        <video id="videoPreview" width="480" height="360" autoplay muted style="border-radius: 12px;"></video>
+                        
+                        <!-- Face Detection Guidance Overlay -->
+                        <div id="faceGuideOverlay" class="face-guide-overlay">
+                            <!-- Center Guidelines -->
+                            <div class="center-cross">
+                                <div class="vertical-line"></div>
+                                <div class="horizontal-line"></div>
+                            </div>
+                            
+                            <!-- Face Oval Guide -->
+                            <div class="face-oval" id="faceOval">
+                                <!-- Eye Markers -->
+                                <div class="eye-marker left-eye"></div>
+                                <div class="eye-marker right-eye"></div>
+                                <!-- Nose Center -->
+                                <div class="nose-marker"></div>
+                                <!-- Mouth Line -->
+                                <div class="mouth-line"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Tracking -->
+                        <div id="recordingProgress" class="recording-progress" style="display: none;">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <div class="progress-text">Recording... <span id="countdown">5</span>s</div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" id="startVideoBtn">Start Camera</button>
+                <button type="button" id="recordVideoBtn" style="display: none;">Record 5-Second Video</button>
+                <button type="button" id="stopVideoBtn" style="display: none;">Stop Camera</button>
+            </form>
+            <div id="videoStatus"></div>
+        </div>
+
+        <div class="section">
+            <h2>Instructions</h2>
+            <div class="info">
+                <h3>How to record good training data:</h3>
+                <ul>
+                    <li>Make sure you have good lighting on your face</li>
+                    <li>Look directly at the camera</li>
+                    <li>Try to move your head slightly during recording for different angles</li>
+                    <li>Keep your face centered in the video frame</li>
+                    <li>Record multiple times if needed for better training data</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '';
+
+        // Global notification system
+        function showNotification(message, type = 'info', duration = 5000) {
+            const notification = document.getElementById('globalNotification');
+            
+            // Clear existing classes and content
+            notification.className = 'notification';
+            notification.innerHTML = '';
+            
+            // Add type class
+            notification.classList.add(type);
+            
+            // Add message and close button
+            notification.innerHTML = `
+                ${message}
+                <button class="close-btn" onclick="hideNotification()">&times;</button>
+            `;
+            
+            // Show notification
+            notification.classList.remove('hidden');
+            
+            // Auto-hide after duration
+            if (duration > 0) {
+                setTimeout(() => {
+                    hideNotification();
+                }, duration);
+            }
+        }
+
+        function hideNotification() {
+            const notification = document.getElementById('globalNotification');
+            notification.classList.add('hidden');
+        }
+
+        // Enhanced error handling
+        function handleApiError(error, response = null) {
+            let errorMessage = 'An unexpected error occurred';
+            
+            if (response) {
+                if (response.status === 400) {
+                    errorMessage = 'Invalid request. Please check your input.';
+                } else if (response.status === 404) {
+                    errorMessage = 'Resource not found.';
+                } else if (response.status === 500) {
+                    errorMessage = 'Server error. Please try again later.';
+                } else if (response.status >= 400) {
+                    errorMessage = `Request failed with status ${response.status}`;
+                }
+            }
+            
+            if (error.message) {
+                errorMessage += `: ${error.message}`;
+            }
+            
+            showNotification(errorMessage, 'error');
+            return errorMessage;
+        }
+
+        // Video recording variables
+        let mediaStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+
+        // Start camera
+        document.getElementById('startVideoBtn').addEventListener('click', async () => {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 640, height: 480 }, 
+                    audio: false 
+                });
+                
+                const videoPreview = document.getElementById('videoPreview');
+                const videoContainer = document.getElementById('videoContainer');
+                
+                videoPreview.srcObject = mediaStream;
+                videoContainer.style.display = 'block';
+                
+                // Face oval is now always visible when camera starts
+                
+                document.getElementById('startVideoBtn').style.display = 'none';
+                document.getElementById('recordVideoBtn').style.display = 'inline-block';
+                document.getElementById('stopVideoBtn').style.display = 'inline-block';
+                
+                showNotification('Camera started successfully!', 'success');
+                document.getElementById('videoStatus').innerHTML = '<div class="info">Camera ready. You can now record video.</div>';
+            } catch (error) {
+                showNotification('Failed to access camera. Please grant camera permission.', 'error');
+                document.getElementById('videoStatus').innerHTML = '<div class="error">Camera access denied or not available</div>';
+            }
+        });
+
+        // Record video
+        document.getElementById('recordVideoBtn').addEventListener('click', async () => {
+            const personName = document.getElementById('videoPersonName').value.trim();
+            if (!personName) {
+                showNotification('Please enter person name first', 'error');
+                return;
+            }
+            
+            if (!mediaStream) {
+                showNotification('Please start camera first', 'error');
+                return;
+            }
+            
+            try {
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(mediaStream, { mimeType: 'video/webm' });
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        recordedChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+                    await uploadVideoForTraining(videoBlob, personName);
+                };
+                
+                mediaRecorder.start();
+                
+                document.getElementById('recordVideoBtn').disabled = true;
+                document.getElementById('videoStatus').innerHTML = '<div class="info">Recording... (5 seconds)</div>';
+                
+                // Show recording progress
+                showRecordingProgress();
+                
+                // Stop recording after 5 seconds
+                setTimeout(() => {
+                    if (mediaRecorder && mediaRecorder.state === 'recording') {
+                        mediaRecorder.stop();
+                        document.getElementById('recordVideoBtn').disabled = false;
+                        hideRecordingProgress();
+                    }
+                }, 5000);
+                
+            } catch (error) {
+                showNotification('Failed to start recording', 'error');
+                document.getElementById('videoStatus').innerHTML = '<div class="error">Recording failed</div>';
+            }
+        });
+
+        // Stop camera
+        document.getElementById('stopVideoBtn').addEventListener('click', () => {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+                mediaStream = null;
+            }
+            
+            const videoContainer = document.getElementById('videoContainer');
+            
+            videoContainer.style.display = 'none';
+            
+            document.getElementById('startVideoBtn').style.display = 'inline-block';
+            document.getElementById('recordVideoBtn').style.display = 'none';
+            document.getElementById('stopVideoBtn').style.display = 'none';
+            
+            document.getElementById('videoStatus').innerHTML = '';
+        });
+
+        // Upload recorded video for training
+        async function uploadVideoForTraining(videoBlob, personName) {
+            const formData = new FormData();
+            formData.append('person_name', personName);
+            formData.append('video', videoBlob, 'recording.webm');
+            
+            const statusDiv = document.getElementById('videoStatus');
+            statusDiv.innerHTML = '<div class="info">Processing video and extracting frames...</div>';
+            
+            try {
+                const response = await fetch(`${API_BASE}/process_video_training`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    showNotification(`Successfully processed video for ${personName}! Extracted ${result.images_saved} training images.`, 'success');
+                    statusDiv.innerHTML = `<div class="success">${result.message}</div>`;
+                    document.getElementById('videoPersonName').value = '';
+                } else {
+                    const errorMsg = result.error || 'Video processing failed';
+                    showNotification(`Video processing failed: ${errorMsg}`, 'error');
+                    statusDiv.innerHTML = `<div class="error">Error: ${errorMsg}</div>`;
+                }
+            } catch (error) {
+                handleApiError(error);
+                statusDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        }
+
+
+        function showRecordingProgress() {
+            const progressContainer = document.getElementById('recordingProgress');
+            const progressFill = document.getElementById('progressFill');
+            const countdown = document.getElementById('countdown');
+            
+            progressContainer.style.display = 'block';
+            
+            let timeLeft = 5;
+            let progress = 0;
+            
+            const progressInterval = setInterval(() => {
+                progress += 20; // 20% per second
+                timeLeft--;
+                
+                progressFill.style.width = progress + '%';
+                countdown.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(progressInterval);
+                }
+            }, 1000);
+        }
+
+        function hideRecordingProgress() {
+            const progressContainer = document.getElementById('recordingProgress');
+            const progressFill = document.getElementById('progressFill');
+            const countdown = document.getElementById('countdown');
+            
+            progressContainer.style.display = 'none';
+            progressFill.style.width = '0%';
+            countdown.textContent = '5';
+        }
+    </script>
+</body>
+</html>

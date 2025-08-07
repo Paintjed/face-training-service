@@ -42,6 +42,11 @@ def index():
     """Serve the web UI"""
     return render_template('index.html')
 
+@app.route('/record', methods=['GET'])
+def record():
+    """Serve the standalone video recording page"""
+    return render_template('record.html')
+
 @app.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
