@@ -4,6 +4,7 @@ services:
     container_name: face-training-service
     ports:
       - "5001:5000"
+      - "5443:5443"
     volumes:
       - ./training_data:/app/training_data
       - ./models:/app/models
@@ -15,6 +16,7 @@ services:
       - FLASK_ENV=production
       - PYTHONUNBUFFERED=1
       - DISPLAY=${DISPLAY}
+      - USE_HTTPS=true
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]

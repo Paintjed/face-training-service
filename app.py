@@ -379,4 +379,21 @@ def process_video_training():
         return jsonify({'error': f'Video processing failed: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    import ssl
+    import os
+    
+    # Check if we want to run with HTTPS
+    use_https = os.environ.get('USE_HTTPS', 'false').lower() == 'true'
+    
+    if use_https:
+        # Create SSL context for HTTPS
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        context.load_cert_chain('cert.pem', 'key.pem')
+        # Run HTTPS on port 5443, HTTP on 5000
+        import threading
+        http_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=5000, debug=False))
+        http_thread.daemon = True
+        http_thread.start()
+        app.run(host='0.0.0.0', port=5443, debug=False, ssl_context=context)
+    else:
+        app.run(host='0.0.0.0', port=5000, debug=False)
