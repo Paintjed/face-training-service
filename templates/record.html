@@ -108,14 +108,15 @@
         /* Recording Progress */
         .recording-progress {
             position: absolute;
-            top: 50%;
+            bottom: -60px;
             left: 50%;
-            transform: translate(-50%, -50%);
+            transform: translateX(-50%);
             background: rgba(0, 0, 0, 0.9);
-            padding: 20px;
+            padding: 15px 20px;
             border-radius: 12px;
             text-align: center;
             backdrop-filter: blur(10px);
+            min-width: 200px;
         }
 
         .progress-bar {
@@ -159,8 +160,196 @@
             95% { opacity: 0.3; }
         }
 
+        /* Captured Photos Section */
+        .captured-photos-section {
+            background: white;
+            margin: 30px 0;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .captured-photos-section h3 {
+            color: #34495e;
+            margin-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+        }
+
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .photo-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .photo-item:hover {
+            transform: scale(1.05);
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .photo-item .photo-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(52, 152, 219, 0.3);
+            border: 3px solid #3498db;
+            box-sizing: border-box;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            color: #3498db;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
+        }
+
+        .photo-item.selected .photo-overlay {
+            display: flex;
+        }
+
+        .photo-item.selected {
+            transform: scale(0.95);
+            box-shadow: 0 0 0 3px #3498db;
+        }
+
+        .photo-item .photo-number {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .photo-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn-primary, .btn-secondary {
+            flex: 1;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #3498db;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+        }
+
+        .btn-primary:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background-color: #95a5a6;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #7f8c8d;
+            transform: translateY(-2px);
+        }
+
+        /* Recording Layout */
+        .recording-layout {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+
+        .recording-main {
+            flex: 2;
+        }
+
+        .recording-sidebar {
+            flex: 1;
+            background: rgba(52, 152, 219, 0.05);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+        }
+
+        .recording-sidebar h3 {
+            color: #34495e;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .recording-sidebar .info {
+            background: transparent;
+            border: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .recording-sidebar .info h4 {
+            color: #2c3e50;
+            margin-bottom: 12px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .recording-sidebar ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .recording-sidebar li {
+            margin-bottom: 8px;
+            color: #34495e;
+            line-height: 1.5;
+        }
+
         /* Responsive adjustments */
         @media (max-width: 768px) {
+            .recording-layout {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .recording-main,
+            .recording-sidebar {
+                flex: none;
+            }
+            
             #videoContainer {
                 width: 100% !important;
                 max-width: 400px;
@@ -171,14 +360,22 @@
                 height: auto;
             }
             
-            .status-panel {
-                font-size: 11px;
-                min-width: 150px;
-            }
-            
             .face-oval {
                 width: 120px;
                 height: 150px;
+            }
+
+            .photos-grid {
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
+            }
+
+            .photo-item img {
+                height: 120px;
+            }
+
+            .photo-actions {
+                flex-direction: column;
             }
         }
     </style>
@@ -194,81 +391,96 @@
             <h2>Video Recording</h2>
             <p>Record a 5-second video to generate training images for face recognition.</p>
             
-            <form id="videoForm">
-                <div class="form-group">
-                    <label for="videoPersonName">Select Person:</label>
-                    <select id="videoPersonName" name="person_name" required>
-                        <option value="">Choose a person...</option>
-                        <option value="Allen">Allen</option>
-                        <option value="Andrew">Andrew</option>
-                        <option value="Angela">Angela</option>
-                        <option value="Carrod">Carrod</option>
-                        <option value="Claire">Claire</option>
-                        <option value="Ingrid">Ingrid</option>
-                        <option value="Ivar">Ivar</option>
-                        <option value="Joan">Joan</option>
-                        <option value="Joseph">Joseph</option>
-                        <option value="Judy">Judy</option>
-                        <option value="Kai">Kai</option>
-                        <option value="Matt">Matt</option>
-                        <option value="Ryan">Ryan</option>
-                        <option value="Spencer">Spencer</option>
-                        <option value="Steve">Steve</option>
-                        <option value="Sue">Sue</option>
-                        <option value="Ya-Ting">Ya-Ting</option>
-                    </select>
+            <div class="recording-layout">
+                <div class="recording-main">
+                    <form id="videoForm">
+                        <div class="form-group">
+                            <label for="videoPersonName">Select Person:</label>
+                            <select id="videoPersonName" name="person_name" required>
+                                <option value="">Choose a person...</option>
+                                <option value="Allen">Allen</option>
+                                <option value="Andrew">Andrew</option>
+                                <option value="Angela">Angela</option>
+                                <option value="Carrod">Carrod</option>
+                                <option value="Claire">Claire</option>
+                                <option value="Ingrid">Ingrid</option>
+                                <option value="Ivar">Ivar</option>
+                                <option value="Joan">Joan</option>
+                                <option value="Joseph">Joseph</option>
+                                <option value="Judy">Judy</option>
+                                <option value="Kai">Kai</option>
+                                <option value="Matt">Matt</option>
+                                <option value="Ryan">Ryan</option>
+                                <option value="Spencer">Spencer</option>
+                                <option value="Steve">Steve</option>
+                                <option value="Sue">Sue</option>
+                                <option value="Ya-Ting">Ya-Ting</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <div id="videoContainer" style="position: relative; display: none; width: 480px; height: 360px; margin: 0 auto;">
+                                <video id="videoPreview" width="480" height="360" autoplay muted style="border-radius: 12px;"></video>
+                                
+                                <!-- Face Detection Guidance Overlay -->
+                                <div id="faceGuideOverlay" class="face-guide-overlay">
+                                    <!-- Center Guidelines -->
+                                    <div class="center-cross">
+                                        <div class="vertical-line"></div>
+                                        <div class="horizontal-line"></div>
+                                    </div>
+                                    
+                                    <!-- Face Oval Guide -->
+                                    <div class="face-oval" id="faceOval">
+                                        <!-- Eye Markers -->
+                                        <div class="eye-marker left-eye"></div>
+                                        <div class="eye-marker right-eye"></div>
+                                        <!-- Nose Center -->
+                                        <div class="nose-marker"></div>
+                                        <!-- Mouth Line -->
+                                        <div class="mouth-line"></div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Progress Tracking -->
+                                <div id="recordingProgress" class="recording-progress" style="display: none;">
+                                    <div class="progress-bar">
+                                        <div class="progress-fill" id="progressFill"></div>
+                                    </div>
+                                    <div class="progress-text">Recording... <span id="countdown">5</span>s</div>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" id="startVideoBtn">Start Camera</button>
+                        <button type="button" id="recordVideoBtn" style="display: none;">Record 5-Second Video</button>
+                        <button type="button" id="stopVideoBtn" style="display: none;">Stop Camera</button>
+                    </form>
+                    <div id="videoStatus"></div>
                 </div>
-                <div class="form-group">
-                    <div id="videoContainer" style="position: relative; display: none; width: 480px; height: 360px; margin: 0 auto;">
-                        <video id="videoPreview" width="480" height="360" autoplay muted style="border-radius: 12px;"></video>
-                        
-                        <!-- Face Detection Guidance Overlay -->
-                        <div id="faceGuideOverlay" class="face-guide-overlay">
-                            <!-- Center Guidelines -->
-                            <div class="center-cross">
-                                <div class="vertical-line"></div>
-                                <div class="horizontal-line"></div>
-                            </div>
-                            
-                            <!-- Face Oval Guide -->
-                            <div class="face-oval" id="faceOval">
-                                <!-- Eye Markers -->
-                                <div class="eye-marker left-eye"></div>
-                                <div class="eye-marker right-eye"></div>
-                                <!-- Nose Center -->
-                                <div class="nose-marker"></div>
-                                <!-- Mouth Line -->
-                                <div class="mouth-line"></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Progress Tracking -->
-                        <div id="recordingProgress" class="recording-progress" style="display: none;">
-                            <div class="progress-bar">
-                                <div class="progress-fill" id="progressFill"></div>
-                            </div>
-                            <div class="progress-text">Recording... <span id="countdown">5</span>s</div>
-                        </div>
+
+                <div class="recording-sidebar">
+                    <h3>Instructions</h3>
+                    <div class="info">
+                        <h4>How to record good training data:</h4>
+                        <ul>
+                            <li>Make sure you have good lighting on your face</li>
+                            <li>Look directly at the camera</li>
+                            <li>Try to move your head slightly during recording for different angles</li>
+                            <li>Keep your face centered in the video frame</li>
+                            <li>Record multiple times if needed for better training data</li>
+                        </ul>
                     </div>
                 </div>
-                <button type="button" id="startVideoBtn">Start Camera</button>
-                <button type="button" id="recordVideoBtn" style="display: none;">Record 5-Second Video</button>
-                <button type="button" id="stopVideoBtn" style="display: none;">Stop Camera</button>
-            </form>
-            <div id="videoStatus"></div>
-        </div>
+            </div>
 
-        <div class="section">
-            <h2>Instructions</h2>
-            <div class="info">
-                <h3>How to record good training data:</h3>
-                <ul>
-                    <li>Make sure you have good lighting on your face</li>
-                    <li>Look directly at the camera</li>
-                    <li>Try to move your head slightly during recording for different angles</li>
-                    <li>Keep your face centered in the video frame</li>
-                    <li>Record multiple times if needed for better training data</li>
-                </ul>
+            <!-- Captured Photos Display -->
+            <div id="capturedPhotosSection" class="captured-photos-section" style="display: none;">
+                <h3>Captured Photos</h3>
+                <p>Select the photos you want to upload for training:</p>
+                <div id="photosGrid" class="photos-grid"></div>
+                <div class="photo-actions">
+                    <button id="uploadSelectedBtn" class="btn-primary" disabled>Upload Selected Photos</button>
+                    <button id="retakeBtn" class="btn-secondary">Retake Photos</button>
+                </div>
             </div>
         </div>
     </div>
@@ -337,6 +549,7 @@
         let mediaStream = null;
         let mediaRecorder = null;
         let recordedChunks = [];
+        let capturedFrames = [];
 
         // Start camera
         document.getElementById('startVideoBtn').addEventListener('click', async () => {
@@ -391,7 +604,7 @@
                 
                 mediaRecorder.onstop = async () => {
                     const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
-                    await uploadVideoForTraining(videoBlob, personName);
+                    await showCapturedPhotos(personName);
                 };
                 
                 mediaRecorder.start();
@@ -399,8 +612,9 @@
                 document.getElementById('recordVideoBtn').disabled = true;
                 document.getElementById('videoStatus').innerHTML = '<div class="info">Recording... (5 seconds)</div>';
                 
-                // Show recording progress
+                // Show recording progress and capture frames
                 showRecordingProgress();
+                captureFramesDuringRecording();
                 
                 // Stop recording after 5 seconds
                 setTimeout(() => {
@@ -408,6 +622,11 @@
                         mediaRecorder.stop();
                         document.getElementById('recordVideoBtn').disabled = false;
                         hideRecordingProgress();
+                        
+                        // Automatically close camera after recording
+                        setTimeout(() => {
+                            stopCamera();
+                        }, 1000); // Give 1 second for processing
                     }
                 }, 5000);
                 
@@ -417,8 +636,8 @@
             }
         });
 
-        // Stop camera
-        document.getElementById('stopVideoBtn').addEventListener('click', () => {
+        // Stop camera function
+        function stopCamera() {
             if (mediaStream) {
                 mediaStream.getTracks().forEach(track => track.stop());
                 mediaStream = null;
@@ -433,6 +652,11 @@
             document.getElementById('stopVideoBtn').style.display = 'none';
             
             document.getElementById('videoStatus').innerHTML = '';
+        }
+
+        // Stop camera button event
+        document.getElementById('stopVideoBtn').addEventListener('click', () => {
+            stopCamera();
         });
 
         // Upload recorded video for training
@@ -499,6 +723,172 @@
             progressFill.style.width = '0%';
             countdown.textContent = '5';
         }
+
+        // Capture frames during recording
+        function captureFramesDuringRecording() {
+            capturedFrames = [];
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            const video = document.getElementById('videoPreview');
+            
+            canvas.width = video.videoWidth || 640;
+            canvas.height = video.videoHeight || 480;
+            
+            // Capture frames every 0.5 seconds during 5-second recording
+            let frameCount = 0;
+            const captureInterval = setInterval(() => {
+                if (frameCount >= 10) { // 10 frames total
+                    clearInterval(captureInterval);
+                    return;
+                }
+                
+                // Draw video frame to canvas
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Convert to data URL and store
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                capturedFrames.push({
+                    id: frameCount,
+                    dataUrl: dataUrl,
+                    selected: true // Default to selected
+                });
+                
+                frameCount++;
+            }, 500);
+        }
+
+        // Show captured photos for selection
+        async function showCapturedPhotos(personName) {
+            const photosSection = document.getElementById('capturedPhotosSection');
+            const photosGrid = document.getElementById('photosGrid');
+            const uploadSelectedBtn = document.getElementById('uploadSelectedBtn');
+            const retakeBtn = document.getElementById('retakeBtn');
+            
+            // Clear previous photos
+            photosGrid.innerHTML = '';
+            
+            // Create photo items
+            capturedFrames.forEach((frame, index) => {
+                const photoItem = document.createElement('div');
+                photoItem.className = 'photo-item selected';
+                photoItem.dataset.frameId = frame.id;
+                
+                photoItem.innerHTML = `
+                    <img src="${frame.dataUrl}" alt="Captured frame ${index + 1}">
+                    <div class="photo-overlay">✓</div>
+                    <div class="photo-number">${index + 1}</div>
+                `;
+                
+                // Toggle selection on click
+                photoItem.addEventListener('click', () => {
+                    photoItem.classList.toggle('selected');
+                    frame.selected = photoItem.classList.contains('selected');
+                    updateUploadButton();
+                });
+                
+                photosGrid.appendChild(photoItem);
+            });
+            
+            // Show the section
+            photosSection.style.display = 'block';
+            updateUploadButton();
+            
+            // Bind button events
+            uploadSelectedBtn.onclick = () => uploadSelectedPhotos(personName);
+            retakeBtn.onclick = () => retakePhotos();
+        }
+
+        // Update upload button state
+        function updateUploadButton() {
+            const uploadSelectedBtn = document.getElementById('uploadSelectedBtn');
+            const selectedCount = capturedFrames.filter(frame => frame.selected).length;
+            
+            uploadSelectedBtn.disabled = selectedCount === 0;
+            uploadSelectedBtn.textContent = `Upload Selected Photos (${selectedCount})`;
+        }
+
+        // Upload selected photos
+        async function uploadSelectedPhotos(personName) {
+            const selectedFrames = capturedFrames.filter(frame => frame.selected);
+            
+            if (selectedFrames.length === 0) {
+                showNotification('Please select at least one photo', 'error');
+                return;
+            }
+            
+            const uploadBtn = document.getElementById('uploadSelectedBtn');
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+            
+            try {
+                // Convert data URLs to blobs and upload
+                const formData = new FormData();
+                formData.append('person_name', personName);
+                
+                for (let i = 0; i < selectedFrames.length; i++) {
+                    const frame = selectedFrames[i];
+                    const blob = dataURLtoBlob(frame.dataUrl);
+                    formData.append('images', blob, `frame_${frame.id}.jpg`);
+                }
+                
+                const response = await fetch('/upload_training_data', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    showNotification(`Successfully uploaded ${selectedFrames.length} photos for ${personName}!`, 'success');
+                    document.getElementById('videoStatus').innerHTML = `<div class="success">${result.message}</div>`;
+                    
+                    // Reset after successful upload
+                    setTimeout(() => {
+                        retakePhotos();
+                    }, 2000);
+                } else {
+                    const errorMsg = result.error || 'Upload failed';
+                    showNotification(`Upload failed: ${errorMsg}`, 'error');
+                    document.getElementById('videoStatus').innerHTML = `<div class="error">Error: ${errorMsg}</div>`;
+                }
+            } catch (error) {
+                showNotification('Upload failed: Network error', 'error');
+                document.getElementById('videoStatus').innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload Selected Photos';
+                updateUploadButton();
+            }
+        }
+
+        // Retake photos
+        function retakePhotos() {
+            const photosSection = document.getElementById('capturedPhotosSection');
+            photosSection.style.display = 'none';
+            
+            // Clear captured frames
+            capturedFrames = [];
+            
+            // Reset UI
+            document.getElementById('recordVideoBtn').disabled = false;
+            document.getElementById('videoPersonName').value = '';
+            document.getElementById('videoStatus').innerHTML = '';
+        }
+
+        // Utility function to convert data URL to blob
+        function dataURLtoBlob(dataURL) {
+            const arr = dataURL.split(',');
+            const mime = arr[0].match(/:(.*?);/)[1];
+            const bstr = atob(arr[1]);
+            let n = bstr.length;
+            const u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], { type: mime });
+        }
+
+        // Enhanced button event listeners
+        document.getElementById('retakeBtn')?.addEventListener('click', retakePhotos);
     </script>
 </body>
 </html>
