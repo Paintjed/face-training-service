@@ -37,15 +37,17 @@ training_status = {
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
 @app.route('/', methods=['GET'])
 def index():
-    """Serve the web UI"""
-    return render_template('index.html')
+    """Disabled for security - use /record for public access"""
+    return "Not Found", 404
 
 @app.route('/record', methods=['GET'])
 def record():
     """Serve the standalone video recording page"""
     return render_template('record.html')
+
 
 @app.route('/health', methods=['GET'])
 def health_check():

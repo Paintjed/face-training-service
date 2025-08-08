@@ -1,5 +1,6 @@
 const API_BASE = '';
 
+
 // Global notification system
 function showNotification(message, type = 'info', duration = 5000) {
     const notification = document.getElementById('globalNotification');
